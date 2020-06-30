@@ -1,11 +1,14 @@
 {
   "name": "@dangao/node-log",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "log from nodejs",
   "repository": "https://github.com/dangaogit/node-log.git",
   "author": "dangaogit",
   "main": "src/main.ts",
   "license": "MIT",
+  "files": [
+    "dist/*"
+  ],
   "devDependencies": {
     "@types/node": "^14.0.14",
     "ts-node": "^8.10.2",
