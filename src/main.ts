@@ -1,4 +1,4 @@
-import "@dangao/date-util-es/src/main"
+import "@dangao/date-util-es"
 import { appendFile, mkdir } from "fs";
 
 export type LogLevel = "error" | "info" | "warn";

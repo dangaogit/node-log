@@ -1,6 +1,6 @@
 {
   "name": "@dangao/node-log",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "log from nodejs",
   "repository": "https://github.com/dangaogit/node-log.git",
   "author": "dangaogit",
@@ -18,6 +18,6 @@
     "typescript": "^3.9.5"
   },
   "dependencies": {
-    "@dangao/date-util-es": "^0.0.1"
+    "@dangao/date-util-es": "^0.0.4"
   }
 }
