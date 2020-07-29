@@ -1,5 +1,6 @@
 import "@dangao/date-util-es";
 import { StackInfo, stackParsing, BashStyle } from "./utils";
+import { writeLine } from "./utils/file";
 
 const LogLevelColor = {
   error: BashStyle.Color.red,
@@ -61,18 +62,18 @@ export interface LogOutputOption {
    */
   levels?: Partial<Record<LogLevel, boolean>>;
   /**
-   * @default {date(yyyy-mm-dd hh:min:ss.ms)} [{level}] [{tag}] {content} ({stack(addr:row:col)})
+   * @default {date(yyyy-mm-dd hh:min:ss.ms)} [{level}] [{tag}] {content} {stack(addr:row:col)}
    */
   printFormat?: string;
 }
 
 interface Option extends Required<LogOutputOption> {}
 
-const defaultConsoleOption: LogOutputConsole = {
+const defaultConsoleOption: Required<LogOutputConsole> = {
   color: true,
   callDetail: true,
 };
-const defaultFileOption: LogOutputFile = {
+const defaultFileOption: Required<LogOutputFile> = {
   outpath: ".",
   filename: "{date(yyyy-mm-dd)}.{tag}.{level}.log",
 };
@@ -82,7 +83,7 @@ const defaultLevels: Partial<Record<LogLevel, boolean>> = {
   info: true,
   warn: true,
 };
-const defaultPrintFormat = "{date(yyyy-mm-dd hh:min:ss.ms)} [{level}] [{tag}] {content} ({stack(addr:row:col)})";
+const defaultPrintFormat = "{date(yyyy-mm-dd hh:min:ss.ms)} [{level}] [{tag}] {content} {stack(addr:row:col)}";
 
 export class Log {
   private tag = "";
@@ -107,22 +108,33 @@ export class Log {
   }
 
   private mergeOption(option: LogOutputOption) {
-    Object.assign(this.option, option);
+    if (option.console === false) {
+      this.option.console = false;
+    } else {
+      Object.assign(this.option.console, option.console);
+    }
+
+    if (option.file === false) {
+      this.option.file = false;
+    } else {
+      Object.assign(this.option.file, option.file);
+    }
+
+    Object.assign(this.option.custom, option.custom);
+
+    Object.assign(this.option.levels, option.levels);
+
+    if (option.printFormat) {
+      this.option.printFormat = option.printFormat;
+    }
   }
 
   private get consoleConf() {
-    const { console } = this.option;
-    if (console) {
-      return typeof console === "boolean" ? defaultConsoleOption : console;
-    }
+    return this.option.console as Required<LogOutputConsole> | undefined;
   }
 
   private get fileConf() {
-    const { file } = this.option;
-
-    if (file) {
-      return typeof file === "boolean" ? defaultFileOption : file;
-    }
+    return this.option.file as Required<LogOutputFile> | undefined;
   }
 
   public getDeriveLog(tag: string) {
@@ -160,76 +172,73 @@ export class Log {
     this.count[level]++;
 
     const { printFormat } = this.option;
-    const content = Log.formatArgs(args).join(" ");
+    const content = Log.formatArgs(...args).join(" ");
+    const date = new Date();
+    const stack = stackParsing()[3];
 
-    /** assembly msg */
-    let msg = printFormat;
+    const [styleMsg, noStyleMsg] = this.getFormatMsg(printFormat, content, date, stack, level);
 
-    msg = this.fillDate(msg);
-    msg = this.fillStack(msg);
-    msg = this.fillTag(msg);
-    msg = this.fillLevel(msg, level);
-    msg = this.fillContent(msg, content);
+    if (this.consoleConf) {
+      console[level](styleMsg);
+    }
 
-    const noStyleMsg = msg.replace(/\033\[[^m]+m/gim, "");
-    
-    if(this.consoleConf) {
-      console[level](msg);
+    if (this.fileConf) {
+      const { outpath, filename } = this.fileConf;
+      const [_, formatOutputPath] = this.getFormatMsg(outpath, "", date, stack, level);
+      const [_1, formatFilenamePath] = this.getFormatMsg(filename, "", date, stack, level);
+      writeLine(formatOutputPath, formatFilenamePath, noStyleMsg);
     }
   }
 
-  private fillLevel(msg: string, level: LogLevel) {
-    return msg.replace(/level/gim, BashStyle.style(level.toUpperCase(), [LogLevelColor[level]]));
-  }
+  private getFormatMsg(format: string, content: string, date: Date, stack: StackInfo, level: LogLevel): [string, string] {
+    const { tag, consoleConf: { color } = {} } = this;
+    let styleMsg = format;
+    let noStyleMsg = format;
 
-  private fillTag(msg: string) {
-    const { tag } = this;
-    return msg.replace(/tag/gim, BashStyle.style(tag, [BashStyle.Color.cyan]));
-  }
-
-  private fillContent(msg: string, content: string) {
-    return msg.replace(/content/gim, BashStyle.style(content, [BashStyle.Color.green]));
-  }
-
-  private fillStack(msg: string) {
-    const { callDetail } = this.consoleConf || {};
-    if (!callDetail) {
-      return msg;
+    /** date */
+    const dateReg = /{date\(([^\)]*)\)}/gim;
+    const dateExec = dateReg.exec(format);
+    if (dateExec && dateExec.length > 1) {
+      const dateStr = date.format(dateExec[1]);
+      styleMsg = styleMsg.replace(dateReg, BashStyle.style(dateStr, [BashStyle.Color.cyan, BashStyle.Font.bold]));
+      noStyleMsg = noStyleMsg.replace(dateReg, dateStr);
     }
 
-    const stackinf = stackParsing()[4];
-    const reg = /{stack\((.*)\)}/gim;
-    const match = msg.match(reg);
-    if (match && match.length > 1) {
-      let template = match[1];
-      template = template.replace(/addr/gim, stackinf.addr);
-      template = template.replace(/row/gim, stackinf.row + "");
-      template = template.replace(/col/gim, stackinf.col + "");
-      template = template.replace(/trigger/gim, stackinf.trigger + "");
+    /** stack */
+    const stackReg = /{stack\((.*)\)}/gim;
+    const stackExec = stackReg.exec(format);
+    if (stackExec && stackExec.length > 1) {
+      if (stackExec && stackExec.length > 1) {
+        let template = stackExec[1];
+        template = template.replace(/addr/gim, stack.addr);
+        template = template.replace(/row/gim, stack.row + "");
+        template = template.replace(/col/gim, stack.col + "");
+        template = template.replace(/trigger/gim, stack.trigger + "");
 
-      template = BashStyle.style(msg, [BashStyle.Color.blue, BashStyle.Font.underline]);
+        template = "(" + BashStyle.style(template, [BashStyle.Color.blue, BashStyle.Font.underline]) + ")";
 
-      return msg.replace(reg, template);
-    }
-
-    return msg;
-  }
-
-  private fillDate(msg: string) {
-    const { color } = this.consoleConf || {};
-    const reg = /{date\(([^\)]*)\)}/gim;
-    const match = msg.match(reg);
-    if (match && match.length > 1) {
-      let str = new Date().format(match[1]);
-
-      if (color) {
-        msg = BashStyle.style(msg, [BashStyle.Color.cyan, BashStyle.Font.bold]);
+        styleMsg = styleMsg.replace(stackReg, template);
       }
 
-      msg = msg.replace(reg, str);
+      noStyleMsg = noStyleMsg.replace(stackReg, "");
     }
 
-    return msg;
+    /** level */
+    const levelReg = /{level}/gim;
+    styleMsg = styleMsg.replace(levelReg, BashStyle.style(level.toUpperCase(), [LogLevelColor[level]]));
+    noStyleMsg = styleMsg.replace(levelReg, level.toUpperCase());
+
+    /** tag */
+    const tagReg = /{tag}/gim;
+    styleMsg = styleMsg.replace(tagReg, BashStyle.style(tag, [BashStyle.Color.cyan]));
+    noStyleMsg = styleMsg.replace(tagReg, tag);
+
+    /** content */
+    const contentReg = /{content}/gim;
+    styleMsg = styleMsg.replace(contentReg, BashStyle.style(content, [BashStyle.Color.green]));
+    noStyleMsg = noStyleMsg.replace(contentReg, content);
+
+    return [styleMsg, noStyleMsg];
   }
 
   private static formatArgs(...args: any[]) {

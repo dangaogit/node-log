@@ -23,7 +23,6 @@ export namespace BashStyle {
   type Style = Color | Font;
 
   export function style(msg: string, style: Style | Style[] | string | string[]) {
-    const result =  `${ControlChar}${style instanceof Array ? style.join(";") : style}m${msg}${ControlChar}0m`;
-    return result;
+    return `${ControlChar}${style instanceof Array ? style.join(";") : style}m${msg}${ControlChar}0m`;
   }
 }

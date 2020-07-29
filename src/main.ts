@@ -1,6 +1,7 @@
 import "@dangao/date-util-es"
 import { appendFile, mkdir } from "fs";
 
+
 export type LogLevel = "error" | "info" | "warn";
 
 export interface LogOption {
@@ -37,7 +38,7 @@ export class Log {
   };
 }
 function writeLine(dirpath: string, filename: string, str: string) {
-  const filepath = dirpath + filename;
+  const filepath = path.join(dirpath, filename);
   try {
     appendFile(filepath, str, err => {
       if (err) {
