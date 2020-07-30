@@ -1,10 +1,10 @@
 {
   "name": "@dangao/node-log",
-  "version": "0.0.7",
+  "version": "0.1.0",
   "description": "log from nodejs",
   "repository": "https://github.com/dangaogit/node-log.git",
   "author": "dangaogit",
-  "main": "dist/main.js",
+  "main": "dist/index.js",
   "license": "MIT",
   "files": [
     "dist/*"

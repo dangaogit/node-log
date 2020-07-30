@@ -39,10 +39,6 @@ interface LogOutputFile {
 
 interface LogOutputCustom {
   onPrint?(level: LogLevel, log: string, stackinf: StackInfo): void;
-  onPrintInfo?(log: string, stackinf: StackInfo): void;
-  onPrintError?(log: string, stackinf: StackInfo): void;
-  onPrintWarn?(log: string, stackinf: StackInfo): void;
-  onPrintDebug?(log: string, stackinf: StackInfo): void;
 }
 
 export interface LogOutputOption {
@@ -171,27 +167,36 @@ export class Log {
      */
     this.count[level]++;
 
-    const { printFormat } = this.option;
+    const { printFormat, custom } = this.option;
     const content = Log.formatArgs(...args).join(" ");
     const date = new Date();
     const stack = stackParsing()[3];
 
     const [styleMsg, noStyleMsg] = this.getFormatMsg(printFormat, content, date, stack, level);
 
+    /** out to console */
     if (this.consoleConf) {
       console[level](styleMsg);
     }
 
+    /** out to file */
     if (this.fileConf) {
       const { outpath, filename } = this.fileConf;
       const [_, formatOutputPath] = this.getFormatMsg(outpath, "", date, stack, level);
       const [_1, formatFilenamePath] = this.getFormatMsg(filename, "", date, stack, level);
       writeLine(formatOutputPath, formatFilenamePath, noStyleMsg);
     }
+
+    /** out to custom */
+    {
+      if (custom.onPrint) {
+        custom.onPrint(level, noStyleMsg, stack);
+      }
+    }
   }
 
   private getFormatMsg(format: string, content: string, date: Date, stack: StackInfo, level: LogLevel): [string, string] {
-    const { tag, consoleConf: { color } = {} } = this;
+    const { tag } = this;
     let styleMsg = format;
     let noStyleMsg = format;
 
@@ -226,12 +231,12 @@ export class Log {
     /** level */
     const levelReg = /{level}/gim;
     styleMsg = styleMsg.replace(levelReg, BashStyle.style(level.toUpperCase(), [LogLevelColor[level]]));
-    noStyleMsg = styleMsg.replace(levelReg, level.toUpperCase());
+    noStyleMsg = noStyleMsg.replace(levelReg, level.toUpperCase());
 
     /** tag */
     const tagReg = /{tag}/gim;
     styleMsg = styleMsg.replace(tagReg, BashStyle.style(tag, [BashStyle.Color.cyan]));
-    noStyleMsg = styleMsg.replace(tagReg, tag);
+    noStyleMsg = noStyleMsg.replace(tagReg, tag);
 
     /** content */
     const contentReg = /{content}/gim;

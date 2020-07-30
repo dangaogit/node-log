@@ -1,9 +1,19 @@
 import { Log } from ".";
 
+const customLog = new Log();
+
 const rootLog = new Log({
   levels: {
     debug: false,
   },
+  file: {
+    filename: "{date(yyyy-mm-dd)}"
+  },
+  custom: {
+    onPrint(level, log) {
+      
+    }
+  }
 });
 
 const eLog = rootLog.getDeriveLog("eLog");
