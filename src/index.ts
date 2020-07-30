@@ -82,7 +82,11 @@ const defaultLevels: Partial<Record<LogLevel, boolean>> = {
 const defaultPrintFormat = "{date(yyyy-mm-dd hh:min:ss.ms)} [{level}] [{tag}] {content} {stack(addr:row:col)}";
 
 export class Log {
-  private tag = "";
+  private tags: string[] = [];
+
+  private get tag() {
+    return this.tags.join(" ");
+  }
 
   public count = {
     info: 0,
@@ -99,7 +103,14 @@ export class Log {
     printFormat: defaultPrintFormat,
   };
 
-  constructor(originOptions: LogOutputOption = {}) {
+  constructor(tags?: string | string[], originOptions: LogOutputOption = {}) {
+    if (tags) {
+      if (tags instanceof Array) {
+        this.tags = tags;
+      } else {
+        this.tags.push(tags);
+      }
+    }
     this.mergeOption(originOptions);
   }
 
@@ -134,9 +145,9 @@ export class Log {
   }
 
   public getDeriveLog(tag: string) {
-    const newInstance = new Log(this.option);
+    const newInstance = new Log([...this.tags], this.option);
 
-    newInstance.tag = tag;
+    newInstance.tags.push(tag);
 
     return newInstance;
   }

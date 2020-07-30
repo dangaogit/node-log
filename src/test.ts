@@ -2,7 +2,7 @@ import { Log } from ".";
 
 const customLog = new Log();
 
-const rootLog = new Log({
+const rootLog = new Log("root", {
   levels: {
     debug: false,
   },
