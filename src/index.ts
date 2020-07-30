@@ -85,7 +85,7 @@ export class Log {
   private tags: string[] = [];
 
   private get tag() {
-    return this.tags.join(" ");
+    return this.tags.join("~");
   }
 
   public count = {
@@ -150,6 +150,10 @@ export class Log {
     newInstance.tags.push(tag);
 
     return newInstance;
+  }
+
+  public setOption(option: LogOutputOption) {
+    this.mergeOption(option);
   }
 
   public info(...args: any[]) {
