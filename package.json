@@ -1,6 +1,6 @@
 {
   "name": "@dangao/node-log",
-  "version": "0.1.0",
+  "version": "0.1.4",
   "description": "log from nodejs",
   "repository": "https://github.com/dangaogit/node-log.git",
   "author": "dangaogit",
@@ -12,6 +12,12 @@
   "scripts": {
     "build": "tsc -p ./ -d"
   },
+  "keywords": [
+    "log",
+    "logger",
+    "nodejs log",
+    "node-log"
+  ],
   "devDependencies": {
     "@types/node": "^14.0.14",
     "ts-node": "^8.10.2",
