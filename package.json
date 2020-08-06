@@ -1,6 +1,6 @@
 {
   "name": "@dangao/node-log",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "log from nodejs",
   "repository": "https://github.com/dangaogit/node-log.git",
   "author": "dangaogit",
