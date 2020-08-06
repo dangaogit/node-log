@@ -38,7 +38,7 @@ interface LogOutputFile {
 }
 
 interface LogOutputCustom {
-  onPrint?(level: LogLevel, log: string, stackinf: StackInfo): void;
+  onPrint?(level: LogLevel, log: string, stackinf: StackInfo, stacks: StackInfo[]): void;
 }
 
 export interface LogOutputOption {
@@ -61,6 +61,10 @@ export interface LogOutputOption {
    * @default {date(yyyy-mm-dd hh:min:ss.ms)} [{level}] [{tag}] {content} {stack(addr:row:col)}
    */
   printFormat?: string;
+  /**
+   * @default 3
+   */
+  stackValue?: number;
 }
 
 interface Option extends Required<LogOutputOption> {}
@@ -101,6 +105,7 @@ export class Log {
     custom: {},
     levels: defaultLevels,
     printFormat: defaultPrintFormat,
+    stackValue: 3
   };
 
   constructor(tags?: string | string[], originOptions: LogOutputOption = {}) {
@@ -182,10 +187,11 @@ export class Log {
      */
     this.count[level]++;
 
-    const { printFormat, custom } = this.option;
+    const { printFormat, custom, stackValue } = this.option;
     const content = Log.formatArgs(...args).join(" ");
     const date = new Date();
-    const stack = stackParsing()[3];
+    const stacks = stackParsing();
+    const stack = stacks[stackValue];
 
     const [styleMsg, noStyleMsg] = this.getFormatMsg(printFormat, content, date, stack, level);
 
@@ -205,7 +211,7 @@ export class Log {
     /** out to custom */
     {
       if (custom.onPrint) {
-        custom.onPrint(level, noStyleMsg, stack);
+        custom.onPrint(level, noStyleMsg, stack, stacks);
       }
     }
   }

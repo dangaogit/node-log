@@ -10,7 +10,7 @@
     "dist/*"
   ],
   "scripts": {
-    "build": "tsc -p ./ -d"
+    "build": "rm -rf ./dist/* && tsc -p ./ -d --listFiles --traceResolution --extendedDiagnostics"
   },
   "keywords": [
     "log",
