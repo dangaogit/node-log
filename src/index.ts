@@ -45,6 +45,7 @@ interface CustomLogInfo {
   stacks: StackInfo[];
   tag: string;
   tags: string[];
+  content: string;
 }
 
 interface LogOutputCustom {
@@ -228,6 +229,7 @@ export class Log {
         stacks,
         tag: this.tag,
         tags: this.tags,
+        content
       };
       if (custom.onPrint) {
         custom.onPrint(logInfo);
