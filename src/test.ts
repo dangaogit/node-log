@@ -7,11 +7,11 @@ const rootLog = new Log("root", {
     debug: false,
   },
   file: {
-    filename: "{date(yyyy-mm-dd)}"
+    filename: "{date(yyyy-mm-dd)}.log"
   },
   custom: {
-    onPrint(level, log) {
-      
+    onPrint(info) {
+      customLog.info(info);
     }
   }
 });

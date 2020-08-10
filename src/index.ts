@@ -37,8 +37,18 @@ interface LogOutputFile {
   filename?: string;
 }
 
+interface CustomLogInfo {
+  formatLog: string;
+  level: LogLevel;
+  date: Date;
+  stack: StackInfo;
+  stacks: StackInfo[];
+  tag: string;
+  tags: string[];
+}
+
 interface LogOutputCustom {
-  onPrint?(level: LogLevel, log: string, stackinf: StackInfo, stacks: StackInfo[]): void;
+  onPrint?(info: CustomLogInfo): void;
 }
 
 export interface LogOutputOption {
@@ -210,8 +220,17 @@ export class Log {
 
     /** out to custom */
     {
+      const logInfo: CustomLogInfo = {
+        formatLog: noStyleMsg,
+        level,
+        date,
+        stack,
+        stacks,
+        tag: this.tag,
+        tags: this.tags,
+      };
       if (custom.onPrint) {
-        custom.onPrint(level, noStyleMsg, stack, stacks);
+        custom.onPrint(logInfo);
       }
     }
   }
