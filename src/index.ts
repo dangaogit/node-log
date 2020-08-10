@@ -46,6 +46,7 @@ interface CustomLogInfo {
   tag: string;
   tags: string[];
   content: string;
+  sequenceId: number;
 }
 
 interface LogOutputCustom {
@@ -69,7 +70,7 @@ export interface LogOutputOption {
    */
   levels?: Partial<Record<LogLevel, boolean>>;
   /**
-   * @default {date(yyyy-mm-dd hh:min:ss.ms)} [{level}] [{tag}] {content} {stack(addr:row:col)}
+   * @default {date(yyyy-mm-dd hh:min:ss.ms)} [{level}] [{tag}] {sequence} {content} {stack(addr:row:col)}
    */
   printFormat?: string;
   /**
@@ -94,9 +95,16 @@ const defaultLevels: Partial<Record<LogLevel, boolean>> = {
   info: true,
   warn: true,
 };
-const defaultPrintFormat = "{date(yyyy-mm-dd hh:min:ss.ms)} [{level}] [{tag}] {content} {stack(addr:row:col)}";
+const defaultPrintFormat = "{date(yyyy-mm-dd hh:min:ss.ms)} [{level}] [{tag}] {sequence} {content} {stack(addr:row:col)}";
+
+let sequenceId = 0;
 
 export class Log {
+
+  private static get sequenceId() {
+    return ++sequenceId;
+  }
+
   private tags: string[] = [];
 
   private get tag() {
@@ -198,13 +206,14 @@ export class Log {
      */
     this.count[level]++;
 
+    const seqId = Log.sequenceId;
     const { printFormat, custom, stackValue } = this.option;
     const content = Log.formatArgs(...args).join(" ");
     const date = new Date();
     const stacks = stackParsing();
     const stack = stacks[stackValue];
 
-    const [styleMsg, noStyleMsg] = this.getFormatMsg(printFormat, content, date, stack, level);
+    const [styleMsg, noStyleMsg] = this.getFormatMsg(printFormat, content, date, stack, level, seqId);
 
     /** out to console */
     if (this.consoleConf) {
@@ -214,8 +223,8 @@ export class Log {
     /** out to file */
     if (this.fileConf) {
       const { outpath, filename } = this.fileConf;
-      const [_, formatOutputPath] = this.getFormatMsg(outpath, "", date, stack, level);
-      const [_1, formatFilenamePath] = this.getFormatMsg(filename, "", date, stack, level);
+      const [_, formatOutputPath] = this.getFormatMsg(outpath, "", date, stack, level, seqId);
+      const [_1, formatFilenamePath] = this.getFormatMsg(filename, "", date, stack, level, seqId);
       writeLine(formatOutputPath, formatFilenamePath, noStyleMsg);
     }
 
@@ -229,7 +238,8 @@ export class Log {
         stacks,
         tag: this.tag,
         tags: this.tags,
-        content
+        content,
+        sequenceId: seqId
       };
       if (custom.onPrint) {
         custom.onPrint(logInfo);
@@ -237,7 +247,7 @@ export class Log {
     }
   }
 
-  private getFormatMsg(format: string, content: string, date: Date, stack: StackInfo, level: LogLevel): [string, string] {
+  private getFormatMsg(format: string, content: string, date: Date, stack: StackInfo, level: LogLevel, seq: number): [string, string] {
     const { tag } = this;
     let styleMsg = format;
     let noStyleMsg = format;
@@ -274,6 +284,11 @@ export class Log {
     const levelReg = /{level}/gim;
     styleMsg = styleMsg.replace(levelReg, BashStyle.style(level.toUpperCase(), [LogLevelColor[level]]));
     noStyleMsg = noStyleMsg.replace(levelReg, level.toUpperCase());
+
+    /** sequence */
+    const sequenceReg = /{sequence}/gim;
+    styleMsg = styleMsg.replace(sequenceReg, BashStyle.style(seq + "", [BashStyle.Color.green]));
+    noStyleMsg = noStyleMsg.replace(sequenceReg, seq + "");
 
     /** tag */
     const tagReg = /{tag}/gim;
