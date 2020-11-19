@@ -168,8 +168,8 @@ export class Log {
   }
 
   public getDeriveLog(tag: string) {
-    const newInstance = new Log([...this.tags], this.option);
-
+    const newInstance = new Log([...this.tags]);
+    newInstance.option = this.option;
     newInstance.tags.push(tag);
 
     return newInstance;
