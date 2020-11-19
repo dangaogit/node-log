@@ -100,7 +100,6 @@ const defaultPrintFormat = "{date(yyyy-mm-dd hh:min:ss.ms)} [{level}] [{tag}] {s
 let sequenceId = 0;
 
 export class Log {
-
   private static get sequenceId() {
     return ++sequenceId;
   }
@@ -119,12 +118,12 @@ export class Log {
   };
 
   private option: Option = {
-    console: defaultConsoleOption,
-    file: defaultFileOption,
+    console: { ...defaultConsoleOption },
+    file: { ...defaultFileOption },
     custom: {},
-    levels: defaultLevels,
+    levels: { ...defaultLevels },
     printFormat: defaultPrintFormat,
-    stackValue: 3
+    stackValue: 3,
   };
 
   constructor(tags?: string | string[], originOptions: LogOutputOption = {}) {
@@ -239,7 +238,7 @@ export class Log {
         tag: this.tag,
         tags: this.tags,
         content,
-        sequenceId: seqId
+        sequenceId: seqId,
       };
       if (custom.onPrint) {
         custom.onPrint(logInfo);
